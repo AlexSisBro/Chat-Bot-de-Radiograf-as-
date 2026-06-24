@@ -1,0 +1,246 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+
+  /* Paleta oscura */
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #11182d;
+  --bg-tertiary: #1b2541;
+
+  --brand-primary: #00f2fe;
+  --brand-secondary: #4facfe;
+  --brand-gradient: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-primary) 100%);
+  --brand-btn-text: #040814;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+
+  --glass-bg: rgba(17, 24, 45, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: rgba(0, 0, 0, 0.4);
+
+  --panel-bg: rgba(10, 14, 26, 0.4);
+  --panel-header-bg: rgba(17, 24, 45, 0.4);
+  --panel-footer-bg: rgba(17, 24, 45, 0.5);
+  --bot-bubble-bg: rgba(27, 37, 65, 0.65);
+  --bot-bubble-typing: rgba(27, 37, 65, 0.4);
+  --input-field-bg: rgba(0, 0, 0, 0.3);
+  --dropzone-bg: rgba(0, 0, 0, 0.15);
+  --dropzone-active-bg: rgba(79, 172, 254, 0.05);
+  --diagnosis-box-bg: rgba(27, 37, 65, 0.3);
+  --meta-box-bg: rgba(255, 255, 255, 0.02);
+  --secondary-btn-bg: rgba(255, 255, 255, 0.05);
+  --badge-bg: rgba(255, 255, 255, 0.05);
+  --auth-bg-gradient: radial-gradient(circle at 50% 50%, #151d35 0%, var(--bg-primary) 100%);
+  --overlay-bg: rgba(5, 7, 15, 0.8);
+  --google-modal-bg: #1a2238;
+  --google-modal-border: rgba(255, 255, 255, 0.12);
+  --logo-bg: rgba(0, 242, 254, 0.1);
+  --logo-border: rgba(0, 242, 254, 0.2);
+  --new-chat-btn-bg: rgba(0, 242, 254, 0.1);
+  --new-chat-btn-border: rgba(0, 242, 254, 0.25);
+  --session-active-border: rgba(0, 242, 254, 0.3);
+  --google-btn-bg: rgba(255, 255, 255, 0.06);
+  --error-bg: rgba(244, 63, 94, 0.08);
+  --image-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --user-bubble-time: rgba(30, 41, 59, 0.7);
+  --user-role-text: #1e293b;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.15); }
+  50% { box-shadow: 0 0 25px rgba(0, 242, 254, 0.35); }
+}
+
+@keyframes dotBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+input:focus {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.15) !important;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 242, 254, 0.35) !important;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px var(--glass-shadow);
+}
+
+.gradient-text {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ===== TEMA CLARO ===== */
+body.light-theme {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e2e8f0;
+
+  --brand-primary: #0e7490;
+  --brand-secondary: #1d4ed8;
+  --brand-gradient: linear-gradient(135deg, #1d4ed8 0%, #0e7490 100%);
+  --brand-btn-text: #ffffff;
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(15, 23, 42, 0.09);
+  --glass-shadow: rgba(15, 23, 42, 0.07);
+
+  --panel-bg: #ffffff;
+  --panel-header-bg: #f8fafc;
+  --panel-footer-bg: #f8fafc;
+  --bot-bubble-bg: #f1f5f9;
+  --bot-bubble-typing: #e8eef4;
+  --input-field-bg: #ffffff;
+  --dropzone-bg: #f8fafc;
+  --dropzone-active-bg: rgba(29, 78, 216, 0.06);
+  --diagnosis-box-bg: #f8fafc;
+  --meta-box-bg: #f1f5f9;
+  --secondary-btn-bg: #f1f5f9;
+  --badge-bg: #e2e8f0;
+  --auth-bg-gradient: radial-gradient(ellipse at 50% 0%, #dbeafe 0%, #f1f5f9 45%, #e2e8f0 100%);
+  --overlay-bg: rgba(15, 23, 42, 0.4);
+  --google-modal-bg: #ffffff;
+  --google-modal-border: rgba(15, 23, 42, 0.1);
+  --logo-bg: rgba(14, 116, 144, 0.1);
+  --logo-border: rgba(14, 116, 144, 0.2);
+  --new-chat-btn-bg: rgba(14, 116, 144, 0.08);
+  --new-chat-btn-border: rgba(14, 116, 144, 0.22);
+  --session-active-border: rgba(14, 116, 144, 0.35);
+  --google-btn-bg: #ffffff;
+  --error-bg: rgba(244, 63, 94, 0.07);
+  --image-shadow: 0 4px 24px rgba(15, 23, 42, 0.1);
+  --user-bubble-time: rgba(255, 255, 255, 0.85);
+  --user-role-text: #ffffff;
+
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body.light-theme input:focus {
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.18) !important;
+  border-color: var(--brand-primary) !important;
+}
+
+body.light-theme button:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.18) !important;
+}
+
+body.light-theme input,
+body.light-theme textarea {
+  background: var(--input-field-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+
+body.light-theme input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+body.light-theme ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.04);
+}

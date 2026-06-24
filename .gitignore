@@ -1,0 +1,43 @@
+# ===== PYTHON =====
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# ===== VARIABLES DE ENTORNO (NUNCA subir al repo) =====
+.env
+*.env
+
+# ===== BASE DE DATOS Y UPLOADS =====
+app/data/*.db
+app/data/uploads/
+
+# ===== FRONTEND =====
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# ===== EDITORES =====
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ===== SISTEMA OPERATIVO =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== LOGS =====
+*.log
+npm-debug.log*
