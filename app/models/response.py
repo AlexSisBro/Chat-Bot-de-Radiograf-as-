@@ -3,23 +3,6 @@ from datetime import datetime
 from typing import Optional
 
 
-class UserResponse(BaseModel):
-    id: int
-    email: str
-
-    class Config:
-        from_attributes = True
-
-
-class AuthResponse(BaseModel):
-    id: int
-    email: str
-    access_token: str
-    token_type: str = "bearer"
-
-    class Config:
-        from_attributes = True
-
 
 class ChatMessageResponse(BaseModel):
     id: int

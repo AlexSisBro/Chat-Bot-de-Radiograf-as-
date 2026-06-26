@@ -5,22 +5,24 @@ import ChatPanel from './components/ChatPanel';
 import AnalysisPanel from './components/AnalysisPanel';
 import MedicalDisclaimer from './components/MedicalDisclaimer';
 import { apiFetch } from './api';
+import { auth } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function App() {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('radiografia_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // firebaseUser: null (loading) | false (no auth) | FirebaseUser object
+  const [firebaseUser, setFirebaseUser] = useState(undefined);
+
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [linkedAnalysis, setLinkedAnalysis] = useState(null);
 
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('radiografia_theme') || 'dark';
-  });
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem('radiografia_theme') || 'dark'
+  );
 
+  // ── Tema ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (theme === 'light') {
       document.body.classList.add('light-theme');
@@ -30,26 +32,32 @@ export default function App() {
     localStorage.setItem('radiografia_theme', theme);
   }, [theme]);
 
-  const handleToggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+  const handleToggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('radiografia_user', JSON.stringify(userData));
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setSessions([]);
-    setActiveSessionId(null);
-    setMessages([]);
-    setLinkedAnalysis(null);
-    localStorage.removeItem('radiografia_user');
-  };
-
+  // ── Firebase Auth State ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!user?.access_token) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user ?? false);
+      if (!user) {
+        // Limpiar estado al cerrar sesión
+        setSessions([]);
+        setActiveSessionId(null);
+        setMessages([]);
+        setLinkedAnalysis(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ── Logout ───────────────────────────────────────────────────────────────
+  const handleLogout = async () => {
+    await signOut(auth);
+    // onAuthStateChanged se dispara y limpia el estado automáticamente
+  };
+
+  // ── Cargar sesiones al autenticarse ──────────────────────────────────────
+  useEffect(() => {
+    if (!firebaseUser) return;
 
     const fetchSessions = async () => {
       try {
@@ -69,8 +77,9 @@ export default function App() {
     };
 
     fetchSessions();
-  }, [user]);
+  }, [firebaseUser]);
 
+  // ── Cargar mensajes al cambiar sesión activa ──────────────────────────────
   useEffect(() => {
     if (!activeSessionId) {
       setMessages([]);
@@ -93,7 +102,7 @@ export default function App() {
   }, [activeSessionId]);
 
   const handleNewSession = async () => {
-    if (!user?.access_token) return;
+    if (!firebaseUser) return;
     try {
       const response = await apiFetch('/chat/sessions', { method: 'POST' });
       if (response.ok) {
@@ -108,13 +117,9 @@ export default function App() {
 
   const handleDeleteSession = async (sessionId) => {
     try {
-      const response = await apiFetch(`/chat/sessions/${sessionId}`, {
-        method: 'DELETE',
-      });
-
+      const response = await apiFetch(`/chat/sessions/${sessionId}`, { method: 'DELETE' });
       if (response.ok) {
         setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-
         if (activeSessionId === sessionId) {
           const remaining = sessions.filter((s) => s.id !== sessionId);
           if (remaining.length > 0) {
@@ -131,18 +136,12 @@ export default function App() {
     }
   };
 
-  const handleDiscussAnalysis = (analysis) => {
-    setLinkedAnalysis(analysis);
-  };
+  const handleDiscussAnalysis = (analysis) => setLinkedAnalysis(analysis);
 
   const handleSendMessage = async (text) => {
     if (!activeSessionId) return;
 
-    const userMsg = {
-      role: 'user',
-      content: text,
-      created_at: new Date().toISOString(),
-    };
+    const userMsg = { role: 'user', content: text, created_at: new Date().toISOString() };
     setMessages((prev) => [...prev, userMsg]);
     setChatLoading(true);
 
@@ -175,16 +174,26 @@ export default function App() {
     }
   };
 
-  const activeSession = sessions.find((s) => s.id === activeSessionId);
-
   const handleAnalysisSuccess = (analysisId) => {
     setSessions((prev) =>
       prev.map((s) => (s.id === activeSessionId ? { ...s, analysis_id: analysisId } : s))
     );
   };
 
-  if (!user?.access_token) {
-    return <AuthScreen onLogin={handleLogin} />;
+  const activeSession = sessions.find((s) => s.id === activeSessionId);
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  // Mientras Firebase comprueba la sesión → pantalla en blanco (evita flash)
+  if (firebaseUser === undefined) {
+    return (
+      <div style={styles.splashLoader}>
+        <div style={styles.splashSpinner} />
+      </div>
+    );
+  }
+
+  if (!firebaseUser) {
+    return <AuthScreen onLogin={() => { /* onAuthStateChanged manejará el estado */ }} />;
   }
 
   return (
@@ -194,7 +203,7 @@ export default function App() {
         activeSessionId={activeSessionId}
         onSelectSession={setActiveSessionId}
         onNewSession={handleNewSession}
-        userEmail={user.email}
+        userEmail={firebaseUser.email}
         onLogout={handleLogout}
         onDeleteSession={handleDeleteSession}
         theme={theme}
@@ -243,5 +252,21 @@ const styles = {
     display: 'flex',
     height: '100%',
     overflow: 'hidden',
+  },
+  splashLoader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100vh',
+    width: '100vw',
+    background: 'var(--bg-primary)',
+  },
+  splashSpinner: {
+    width: '40px',
+    height: '40px',
+    border: '3px solid var(--glass-border)',
+    borderTop: '3px solid var(--brand-primary)',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
   },
 };

@@ -1,32 +1,40 @@
 import { API_BASE_URL } from './config';
+import { auth } from './firebase';
 
-export function getStoredAuth() {
-  const raw = localStorage.getItem('radiografia_user');
-  if (!raw) return null;
+/**
+ * Obtiene un Firebase ID Token fresco para el usuario actual.
+ * Firebase renueva el token automáticamente si está próximo a expirar.
+ */
+async function getFirebaseToken() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return null;
   try {
-    return JSON.parse(raw);
+    return await currentUser.getIdToken(/* forceRefresh= */ false);
   } catch {
     return null;
   }
 }
 
-export function authHeaders(extra = {}) {
-  const auth = getStoredAuth();
+export async function authHeaders(extra = {}) {
+  const token = await getFirebaseToken();
   const headers = { ...extra };
-  if (auth?.access_token) {
-    headers.Authorization = `Bearer ${auth.access_token}`;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
   return headers;
 }
 
 export async function apiFetch(path, options = {}) {
+  const headers = await authHeaders(options.headers || {});
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: authHeaders(options.headers || {}),
+    headers,
   });
 
   if (response.status === 401) {
-    localStorage.removeItem('radiografia_user');
+    // Token inválido: forzar cierre de sesión
+    await auth.signOut();
     window.location.reload();
   }
 

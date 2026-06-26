@@ -3,8 +3,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.core.security import decode_access_token
 from app.models.orm import User, ChatSession
+from app.services.firebase_auth import verify_firebase_id_token
 
 security_scheme = HTTPBearer(auto_error=False)
 
@@ -29,18 +29,30 @@ def get_current_user(
         )
 
     try:
-        payload = decode_access_token(credentials.credentials)
-        user_id = int(payload.get("sub", 0))
+        payload = verify_firebase_id_token(credentials.credentials)
+        firebase_uid: str = payload.get("sub") or payload.get("uid", "")
+        email: str = payload.get("email", "")
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
+            detail="Token de Firebase inválido o expirado",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    if not firebase_uid or not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token no contiene uid o email",
+        )
+
+    # Upsert: crear usuario si no existe, basado en el email de Firebase
+    user = db.query(User).filter(User.email == email).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
+        user = User(email=email, password_hash=None)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
     return user
 
 

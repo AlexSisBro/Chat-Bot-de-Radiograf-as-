@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Configuración de Firebase utilizando variables de entorno de Vite
 const firebaseConfig = {
@@ -17,3 +17,7 @@ const app = initializeApp(firebaseConfig);
 
 // Exportar servicio de Autenticación
 export const auth = getAuth(app);
+
+// Proveedor de Google para Sign-In con popup
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });

@@ -41,6 +41,3 @@ desktop.ini
 # ===== LOGS =====
 *.log
 npm-debug.log*
-
-# ===== FIREBASE CLI =====
-.firebase/
