@@ -1,11 +1,17 @@
+import base64
 import json
-
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from app.core.config import settings
-from app.models.analysis_schema import ANALYSIS_JSON_SCHEMA, StructuredAnalysis, format_structured_report
+from app.models.analysis_schema import (
+    ANALYSIS_JSON_SCHEMA,
+    StructuredAnalysis,
+    format_structured_report,
+)
 
-genai.configure(api_key=settings.gemini_api_key)
+
+client = genai.Client(api_key=settings.gemini_api_key)
 
 MEDICAL_SYSTEM_INSTRUCTION = """Eres un asistente clínico de apoyo en radiología y medicina general.
 Responde en español, con claridad y empatía.
@@ -13,17 +19,6 @@ REGLA CRÍTICA: Solo debes responder preguntas que estén relacionadas directame
 Si el usuario hace preguntas ajenas a la radiografía o intenta hablar de otros temas no relacionados con este análisis clínico, responde amablemente indicando que solo estás autorizado para hablar sobre la radiografía de esta consulta.
 No sustituyes el diagnóstico de un médico: indica siempre que la evaluación presencial es necesaria.
 Si detectas urgencia, recomienda atención inmediata."""
-
-chat_model = genai.GenerativeModel(settings.gemini_model, system_instruction=MEDICAL_SYSTEM_INSTRUCTION)
-
-vision_generation_config = genai.GenerationConfig(
-    response_mime_type="application/json",
-    response_schema=ANALYSIS_JSON_SCHEMA,
-)
-vision_model = genai.GenerativeModel(
-    settings.gemini_model,
-    generation_config=vision_generation_config,
-)
 
 
 async def analyze_image_structured(image_base64: str, patient_info: str, image_size: str) -> StructuredAnalysis:
@@ -34,20 +29,34 @@ Dimensiones: {image_size}
 Responde únicamente en JSON con hallazgos_normales, hallazgos_anormales, diagnostico_diferencial,
 urgencia (baja/media/alta), recomendaciones y resumen breve en español."""
 
-    response = vision_model.generate_content([
-        prompt,
-        {"inline_data": {"mime_type": "image/jpeg", "data": image_base64}},
-    ])
-
     try:
+        
+        image_bytes = base64.b64decode(image_base64)
+        image_part = types.Part.from_bytes(
+            data=image_bytes,
+            mime_type="image/jpeg"
+        )
+
+        
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=[prompt, image_part],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=ANALYSIS_JSON_SCHEMA,
+            )
+        )
+        
         payload = json.loads(response.text)
         return StructuredAnalysis.model_validate(payload)
-    except Exception:
+        
+    except Exception as e:
+        print(f"Error en el análisis de imagen: {e}")
         return StructuredAnalysis(
             hallazgos_anormales=["No se pudo estructurar el análisis automáticamente"],
-            resumen=response.text[:500] if response.text else "Análisis no disponible",
+            resumen=response.text[:500] if 'response' in locals() and response.text else "Análisis no disponible",
             urgencia="media",
-            recomendaciones=["Consultar con un radiólogo presencialmente"],
+            recommendaciones=["Consultar con un radiólogo presencialmente"],
         )
 
 
@@ -66,5 +75,12 @@ async def chat_response(
         parts.append("HISTORIAL DE CONVERSACIÓN:\n" + "\n".join(session_history[-10:]))
     parts.append(f"Paciente: {new_message}")
 
-    response = chat_model.generate_content("\n\n".join(parts))
+    
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        contents="\n\n".join(parts),
+        config=types.GenerateContentConfig(
+            system_instruction=MEDICAL_SYSTEM_INSTRUCTION,
+        )
+    )
     return response.text
