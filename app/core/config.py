@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_expire_minutes: int = 60 * 24 * 7
     google_client_id: str = ""
+    firebase_project_id: str = ""
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     rate_limit_analyze_per_minute: int = 10
     rate_limit_chat_per_minute: int = 30

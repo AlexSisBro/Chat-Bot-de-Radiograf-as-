@@ -7,7 +7,7 @@ from app.core.deps import get_db, get_current_user, get_owned_session
 from app.core.rate_limit import check_rate_limit
 from app.core.security import create_access_token
 from app.models.orm import ChatSession, ChatMessage, User
-from app.models.request import UserRegister, UserLogin, GoogleLoginRequest, ChatRequest
+from app.models.request import UserRegister, UserLogin, GoogleLoginRequest, ChatRequest, FirebaseLoginRequest
 from app.models.response import AuthResponse, ChatSessionResponse, ChatMessageResponse, ChatResponse
 from app.services.session_manager import (
     register_user,
@@ -21,6 +21,7 @@ from app.services.session_manager import (
 )
 from app.services.gemini_service import chat_response
 from app.services.google_oauth import verify_google_id_token, generate_oauth_state
+from app.services.firebase_auth import verify_firebase_id_token
 
 router = APIRouter(prefix="/chat", tags=["💬 Chat Bot"])
 
@@ -70,6 +71,23 @@ def google_login_endpoint(payload: GoogleLoginRequest, db: Session = Depends(get
         raise HTTPException(status_code=401, detail="Token de Google inválido o expirado")
 
     user = get_or_create_google_user(db, email=idinfo["email"])
+    return _auth_response(user)
+
+
+@router.post("/firebase-login", response_model=AuthResponse)
+def firebase_login_endpoint(payload: FirebaseLoginRequest, db: Session = Depends(get_db)):
+    try:
+        idinfo = verify_firebase_id_token(payload.id_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=401, detail="Token de Firebase inválido o expirado")
+
+    email = idinfo.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="El token de Firebase no contiene un correo electrónico válido")
+
+    user = get_or_create_google_user(db, email=email)
     return _auth_response(user)
 
 

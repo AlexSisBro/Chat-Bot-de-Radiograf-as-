@@ -22,3 +22,7 @@ class ChatRequest(BaseModel):
     session_id: int
     message: str
     analysis_id: Optional[int] = None
+
+class FirebaseLoginRequest(BaseModel):
+    id_token: str
+    username: Optional[str] = None
