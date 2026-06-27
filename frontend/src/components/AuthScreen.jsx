@@ -6,8 +6,8 @@ import { auth, googleProvider } from '../firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
   updateProfile,
 } from 'firebase/auth';
 
@@ -32,26 +32,6 @@ export default function AuthScreen({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // ── Capturar resultado de redirección al cargar la pantalla ────────────────
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      setGoogleLoading(true);
-      try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          onLogin(result.user);
-        }
-      } catch (err) {
-        console.error("Error al retornar de la redirección de Google:", err);
-        setError(mapFirebaseError(err));
-        alert("Error de Google Auth (Redirect):\n\n" + (err.message || err.code || err));
-      } finally {
-        setGoogleLoading(false);
-      }
-    };
-    checkRedirectResult();
-  }, [onLogin]);
 
   // ── Email / Password ──────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
@@ -83,16 +63,28 @@ export default function AuthScreen({ onLogin }) {
     }
   };
 
-  // ── Google Sign-In (Redirección segura de Firebase) ───────────────────────
+  // ── Google Sign-In (Popup con Fallback a Redirección) ─────────────────────
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError('');
     try {
-      await signInWithRedirect(auth, googleProvider);
+      // 1. Intentar Popup (Recomendado para localhost)
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result?.user) {
+        onLogin(result.user);
+      }
     } catch (err) {
-      console.error("Error al iniciar redirección de Google:", err);
-      setError(mapFirebaseError(err));
-      alert("Error al iniciar Google Sign-In:\n\n" + (err.message || err.code || err));
+      console.warn("Popup bloqueado o falló, intentando redirección...", err);
+      // 2. Si falla por políticas restrictivas del navegador, usar Redirección
+      try {
+        await signInWithRedirect(auth, googleProvider);
+      } catch (redirectErr) {
+        console.error("Error en Google Sign-In:", redirectErr);
+        setError(mapFirebaseError(redirectErr));
+        alert("Error de Google Auth:\n\n" + (redirectErr.message || redirectErr.code || redirectErr));
+        setGoogleLoading(false);
+      }
+    } finally {
       setGoogleLoading(false);
     }
   };
