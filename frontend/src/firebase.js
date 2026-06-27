@@ -12,6 +12,12 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// Validar carga de variables de entorno
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase API Key is missing! Check your .env file.");
+  alert("Error de configuración:\n\nNo se cargaron las variables de entorno de Firebase en el frontend. Asegúrate de tener un archivo .env válido y que el servidor se esté iniciando desde la carpeta del frontend.");
+}
+
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 

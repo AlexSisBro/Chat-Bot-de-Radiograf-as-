@@ -33,6 +33,14 @@ export async function apiFetch(path, options = {}) {
   });
 
   if (response.status === 401) {
+    let detail = "Token inválido o expirado";
+    try {
+      const errorData = await response.clone().json();
+      detail = errorData.detail || detail;
+    } catch (e) {}
+    
+    alert("Error de autenticación con el servidor:\n\n" + detail);
+    
     // Token inválido: forzar cierre de sesión
     await auth.signOut();
     window.location.reload();

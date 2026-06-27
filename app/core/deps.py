@@ -32,10 +32,12 @@ def get_current_user(
         payload = verify_firebase_id_token(credentials.credentials)
         firebase_uid: str = payload.get("sub") or payload.get("uid", "")
         email: str = payload.get("email", "")
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de Firebase inválido o expirado",
+            detail=f"Token de Firebase inválido o expirado: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

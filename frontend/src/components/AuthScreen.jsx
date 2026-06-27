@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Activity, Key, Mail, User as UserIcon, ArrowRight, Loader2, AlertCircle, Sun, Moon, Chrome,
+  Activity, Key, Mail, User as UserIcon, ArrowRight, Loader2, AlertCircle, Sun, Moon,
 } from 'lucide-react';
 import { auth, googleProvider } from '../firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   updateProfile,
 } from 'firebase/auth';
 
@@ -32,6 +33,26 @@ export default function AuthScreen({ onLogin }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // ── Capturar resultado de redirección al cargar la pantalla ────────────────
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      setGoogleLoading(true);
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          onLogin(result.user);
+        }
+      } catch (err) {
+        console.error("Error al retornar de la redirección de Google:", err);
+        setError(mapFirebaseError(err));
+        alert("Error de Google Auth (Redirect):\n\n" + (err.message || err.code || err));
+      } finally {
+        setGoogleLoading(false);
+      }
+    };
+    checkRedirectResult();
+  }, [onLogin]);
+
   // ── Email / Password ──────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,27 +73,26 @@ export default function AuthScreen({ onLogin }) {
       } else {
         credential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       }
-      // onLogin recibe el FirebaseUser; App.jsx lo procesa con onAuthStateChanged
       onLogin(credential.user);
     } catch (err) {
+      console.error("Error en Email/Password Auth:", err);
       setError(mapFirebaseError(err));
+      alert("Error de Email/Password Auth:\n\n" + (err.message || err.code || err));
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Google Sign-In (popup nativo) ─────────────────────────────────────────
+  // ── Google Sign-In (Redirección segura de Firebase) ───────────────────────
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError('');
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      onLogin(result.user);
+      await signInWithRedirect(auth, googleProvider);
     } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError(mapFirebaseError(err));
-      }
-    } finally {
+      console.error("Error al iniciar redirección de Google:", err);
+      setError(mapFirebaseError(err));
+      alert("Error al iniciar Google Sign-In:\n\n" + (err.message || err.code || err));
       setGoogleLoading(false);
     }
   };

@@ -17,6 +17,9 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [linkedAnalysis, setLinkedAnalysis] = useState(null);
+  
+  // ── NUEVO: Estado para controlar la carga inicial de sesiones de la API ──
+  const [sessionsLoading, setSessionsLoading] = useState(true);
 
   const [theme, setTheme] = useState(
     () => localStorage.getItem('radiografia_theme') || 'dark'
@@ -44,6 +47,7 @@ export default function App() {
         setActiveSessionId(null);
         setMessages([]);
         setLinkedAnalysis(null);
+        setSessionsLoading(true); // Resetear bandera al salir
       }
     });
     return () => unsubscribe();
@@ -52,7 +56,6 @@ export default function App() {
   // ── Logout ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     await signOut(auth);
-    // onAuthStateChanged se dispara y limpia el estado automáticamente
   };
 
   // ── Cargar sesiones al autenticarse ──────────────────────────────────────
@@ -60,6 +63,7 @@ export default function App() {
     if (!firebaseUser) return;
 
     const fetchSessions = async () => {
+      setSessionsLoading(true); // Iniciamos carga de datos de la API
       try {
         const response = await apiFetch('/chat/sessions');
         if (response.ok) {
@@ -73,6 +77,8 @@ export default function App() {
         }
       } catch (err) {
         console.error('Error al cargar sesiones:', err);
+      } finally {
+        setSessionsLoading(false); // Finaliza la carga pase lo que pase
       }
     };
 
@@ -183,8 +189,8 @@ export default function App() {
   const activeSession = sessions.find((s) => s.id === activeSessionId);
 
   // ── Render ────────────────────────────────────────────────────────────────
-  // Mientras Firebase comprueba la sesión → pantalla en blanco (evita flash)
-  if (firebaseUser === undefined) {
+  // MODIFICADO: Mientras se comprueba auth O se descargan las sesiones iniciales, mantenemos el Spinner de carga estable
+  if (firebaseUser === undefined || (firebaseUser && sessionsLoading)) {
     return (
       <div style={styles.splashLoader}>
         <div style={styles.splashSpinner} />
