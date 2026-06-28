@@ -23,7 +23,7 @@ export default function Sidebar({ sessions, activeSessionId, onSelectSession, on
           {sessions.length === 0 ? (
             <div style={styles.emptyList}>No hay consultas iniciadas</div>
           ) : (
-            sessions.map((session) => (
+            sessions.map((session, index) => (
               <div
                 key={session.id}
                 onClick={() => onSelectSession(session.id)}
@@ -34,7 +34,7 @@ export default function Sidebar({ sessions, activeSessionId, onSelectSession, on
                 }}
               >
                 <MessageSquare size={16} color={activeSessionId === session.id ? 'var(--brand-primary)' : 'var(--text-muted)'} />
-                <span style={styles.sessionTitle}>Consulta #{session.id}</span>
+                <span style={styles.sessionTitle}>Consulta #{sessions.length - index}</span>
                 <span style={styles.sessionDate}>
                   {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>

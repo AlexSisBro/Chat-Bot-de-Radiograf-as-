@@ -41,3 +41,6 @@ desktop.ini
 # ===== LOGS =====
 *.log
 npm-debug.log*
+
+# ===== CREDENCIALES =====
+firebase-key.json

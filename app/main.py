@@ -3,17 +3,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+import firebase_admin
+from firebase_admin import credentials
 
 from app.core.config import settings
 from app.core.database import engine, run_sqlite_migrations
 from app.models.orm import Base
 from app.api.v1.endpoints import analyze, chat, health
 
+# 1. Definimos la app UNA SOLA VEZ
+app = FastAPI(title="Radiografia Chat Bot", version="1.1")
+
+# 2. Inicialización de Firebase
+@app.on_event("startup")
+async def startup_event():
+    if not firebase_admin._apps:
+        # Asegúrate de que el archivo firebase-key.json esté en la raíz de C:\Proyetos\Radiografia-ChatBot\
+        cred = credentials.Certificate("firebase-key.json")
+        firebase_admin.initialize_app(cred)
+        print("Firebase inicializado correctamente")
+
+# 3. Base de datos
 Base.metadata.create_all(bind=engine)
 run_sqlite_migrations()
 
-app = FastAPI(title="Radiografia Chat Bot", version="1.1")
-
+# 4. Configuración de CORS
 if settings.environment == "production":
     allow_methods = ["GET", "POST", "DELETE", "OPTIONS"]
     allow_headers = ["Authorization", "Content-Type", "Accept"]
